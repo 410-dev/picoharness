@@ -87,7 +87,7 @@ def execute(action: dict) -> str:
         available = ", ".join(sorted(tools.keys()))
         raise ValueError(f"Unknown tool '{name}'. Available tools: {available}")
 
-    print(f"[HARNESS] Executing tool [{name}] with parameters of {json.dumps(parameters)}")
+    print(f"[HARNESS] Executing tool [{name}] with parameters of {json.dumps(parameters, ensure_ascii=False)}")
     return tools[name].execute(parameters)
 
 
