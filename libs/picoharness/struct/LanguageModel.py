@@ -162,7 +162,7 @@ class LanguageModel:
             tools: dict = harness.get_tools()
             if self.driver.DEBUG_MODE:
                 print(f"    [DEBUG] Tools payload: {json.dumps(tools)}")
-            result: dict = self.driver.send_request(self.history(), self.model_config, tools)
+            result: dict = self.driver.send_request(self.history(), self.model_config, structure, tools)
             self._record_token_usage(result)
 
             response_text: str = self._construct_response_text(result)
