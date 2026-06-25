@@ -139,6 +139,9 @@ class LanguageModel:
         self.add_history(self.rolename_user, content)
 
         # Send request to the driver
+        if self.driver.DEBUG_MODE:
+            print(f"    [DEBUG] Message payload: {self.history()}")
+            print(f"    [DEBUG] Using driver: {self.driver.model}")
         result: dict = self.driver.send_request(self.history(), self.model_config, self.driver_config)
         self._record_token_usage(result)
 
@@ -156,6 +159,8 @@ class LanguageModel:
 
             # Get tools and request to model with tools
             tools: dict = harness.get_tools()
+            if self.driver.DEBUG_MODE:
+                print(f"    [DEBUG] Tools payload: {json.dumps(tools)}")
             result: dict = self.driver.send_request(self.history(), self.model_config, self.driver_config, tools=tools)
             self._record_token_usage(result)
 
