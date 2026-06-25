@@ -1,0 +1,20 @@
+{
+    "gemma4-pro": {
+        "context": 81920,
+        "driver": "LMStudio",
+        "url": "100.104.192.27:11434",
+        "model": "gemma-4-26b-a4b-it-qat-uncensored-heretic"
+    },
+    "gemma4-expert": {
+        "context": 20480,
+        "driver": "LMStudio",
+        "url": "100.95.10.27:11434",
+        "model": ""
+    },
+    "gemma4-flash": {
+        "context": 81920,
+        "driver": "LMStudio",
+        "url": "100.95.10.27:11434",
+        "model": ""
+    }
+}
