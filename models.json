@@ -3,18 +3,21 @@
         "context": 81920,
         "driver": "LMStudio",
         "url": "100.104.192.27:11434",
-        "model": "gemma-4-26b-a4b-it-qat-uncensored-heretic"
+        "model": "gemma-4-26b-a4b-it-qat-uncensored-heretic",
+        "priority": "intelligence:5"
     },
     "gemma4-expert": {
         "context": 20480,
         "driver": "LMStudio",
         "url": "100.95.10.27:11434",
-        "model": ""
+        "model": "huihui-gemma-4-26b-a4b-it-qat-unquantized-abliterated",
+        "priority": "intelligence:3"
     },
     "gemma4-flash": {
         "context": 81920,
         "driver": "LMStudio",
         "url": "100.95.10.27:11434",
-        "model": ""
+        "model": "gemma4-26b-a4b-uncensored-hauhaucs-balanced",
+        "priority": "price:10"
     }
 }
