@@ -72,8 +72,11 @@ class LanguageModel:
         self.rolename_assistant: str = "assistant"
         self.rolename_tool     : str = "tool"
 
+        # Model configuration - System prompt
+        self.cfg_model_system_prompt: str | None = ""
+
         # Harness configuration - Tool calling
-        self.cfg_max_tool_calling_chains: int = 100
+        self.cfg_harness_max_tool_calling_chains: int = 100
 
         # Harness configuration - Thinking handler
         self.cfg_merge_reasoning_in_response: bool = False
@@ -112,6 +115,21 @@ class LanguageModel:
                 history["role"] = role_mapping[history["role"]]
         return self
 
+    def history(self) -> list[dict]:
+        # Enforce system prompt at the beginning of history
+        if self.cfg_model_system_prompt:
+            if not self.histories or self.histories[0]["role"] != "system":
+                self.histories.insert(0, {"role": "system", "content": self.cfg_model_system_prompt})
+        elif self.cfg_model_system_prompt is None:
+            if self.histories and self.histories[0]["role"] == "system":
+                self.histories.pop(0)
+        return self.histories
+
+    def clear(self) -> "LanguageModel":
+        self.histories.clear()
+        self._token_usage.reset()
+        return self
+
     def chat(self, content: str, use_tools: bool = False) -> "LanguageModel":
 
         if use_tools:
@@ -121,7 +139,7 @@ class LanguageModel:
         self.add_history(self.rolename_user, content)
 
         # Send request to the driver
-        result: dict = self.driver.send_request(self.histories, self.model_config, self.driver_config)
+        result: dict = self.driver.send_request(self.history(), self.model_config, self.driver_config)
         self._record_token_usage(result)
 
         result_text: str = self._construct_response_text(result)
@@ -134,11 +152,11 @@ class LanguageModel:
         self.add_history(self.rolename_user, content)
 
         # Iterate loop until the model stops calling tools
-        for i in range(0, self.cfg_max_tool_calling_chains):
+        for i in range(0, self.cfg_harness_max_tool_calling_chains):
 
             # Get tools and request to model with tools
             tools: dict = harness.get_tools()
-            result: dict = self.driver.send_request(self.histories, self.model_config, self.driver_config, tools=tools)
+            result: dict = self.driver.send_request(self.history(), self.model_config, self.driver_config, tools=tools)
             self._record_token_usage(result)
 
             response_text: str = self._construct_response_text(result)
@@ -181,12 +199,12 @@ class LanguageModel:
 
         return self
 
-    def json(self, content: str) -> "LanguageModel":
+    def json(self, content: str, structure: dict) -> tuple["LanguageModel", dict|list|None]:
         self._assert_driver_initialized()
         self.add_history(self.rolename_user, content)
 
         # Send request to the driver
-        result: dict|list|None = self.driver.send_request_ensure_structured(self.histories, self.model_config, self.driver_config)
+        result: dict|list|None = self.driver.send_request_ensure_structured(self.history(), structure, self.model_config)
         self._token_usage.add(self.driver.last_usage)
 
         if result is None:
@@ -194,7 +212,7 @@ class LanguageModel:
 
         self.add_history(self.rolename_assistant, str(result))
 
-        return self
+        return self, result
 
     def tool_result(self, content: str) -> "LanguageModel":
         return self.add_history(self.rolename_tool, content)
@@ -203,13 +221,13 @@ class LanguageModel:
         return copy.deepcopy(self)
 
     def construct(self) -> list[dict]:
-        return self.histories
+        return self.history()
 
     def token_usage(self) -> TokenUsage:
         return self._token_usage
 
     def response(self) -> str:
-        if not self.histories:
+        if not self.history():
             return ""
         last_entry = self.histories[-1]
         if last_entry["role"] == self.rolename_assistant:
