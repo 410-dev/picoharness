@@ -91,10 +91,7 @@ class LMStudio(LMDriver):
             # LM Studio follows the OpenAI-compatible structured output shape.
             payload["response_format"] = {
                 "type": "json_schema",
-                "json_schema": {
-                    "name": "structured_response",
-                    "schema": structure,
-                },
+                "json_schema": structure,
             }
 
         tool_list = self._normalize_tools(tools)
