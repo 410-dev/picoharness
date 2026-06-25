@@ -74,6 +74,7 @@ class LanguageModel:
 
         # Model configuration - System prompt
         self.cfg_model_system_prompt: str | None = ""
+        self.cfg_model_tool_mode_reconstruct_to_json_prompt: str | None = "Convert your response text into a valid JSON format according to the provided schema."
 
         # Harness configuration - Tool calling
         self.cfg_harness_max_tool_calling_chains: int = 100
@@ -130,10 +131,10 @@ class LanguageModel:
         self._token_usage.reset()
         return self
 
-    def chat(self, content: str, use_tools: bool = False) -> "LanguageModel":
+    def chat(self, content: str, structure: dict|None = None, use_tools: bool = False) -> "LanguageModel":
 
         if use_tools:
-            return self.chat_with_tool(content)
+            return self.chat_with_tool(content, structure)
 
         self._assert_driver_initialized()
         self.add_history(self.rolename_user, content)
@@ -150,7 +151,7 @@ class LanguageModel:
 
         return self
 
-    def chat_with_tool(self, content: str) -> "LanguageModel":
+    def chat_with_tool(self, content: str, structure: dict|None = None) -> "LanguageModel":
         self._assert_driver_initialized()
         self.add_history(self.rolename_user, content)
 
@@ -161,7 +162,7 @@ class LanguageModel:
             tools: dict = harness.get_tools()
             if self.driver.DEBUG_MODE:
                 print(f"    [DEBUG] Tools payload: {json.dumps(tools)}")
-            result: dict = self.driver.send_request(self.history(), self.model_config, self.driver_config, tools=tools)
+            result: dict = self.driver.send_request(self.history(), self.model_config, tools)
             self._record_token_usage(result)
 
             response_text: str = self._construct_response_text(result)
@@ -170,6 +171,11 @@ class LanguageModel:
             # It is final response - exit tool call loop
             if "tool" not in result.keys():
                 self.add_history(self.rolename_assistant, response_text)
+
+                # 최종 답변은 json 을 강제하도록 다시 요청함
+                if structure is not None and self.cfg_model_tool_mode_reconstruct_to_json_prompt is not None:
+                    self.json(str(self.cfg_model_tool_mode_reconstruct_to_json_prompt), structure)
+
                 break
 
             # Get tool call string from response
